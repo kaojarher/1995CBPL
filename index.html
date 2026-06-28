@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>1995中華職棒總冠軍挑戰賽：熱血紀錄版</title>
+    <style>
+        :root {
+            --fc-black: #000000;
+            --fc-white: #ffffff;
+            --fc-red: #da251d;       
+            --fc-gold: #fbc02d;      
+            --fc-screen-bg: #004411;  
+            --fc-soil: #5d4037;       
+        }
+        * {
+            box-sizing: border-box;
+            font-family: 'Courier New', 'Courier', 'Impact', "Microsoft JhengHei", sans-serif;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none; 
+        }
+        body {
+            background-color: var(--fc-black);
+            color: var(--fc-white);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-wrapper {
+            width: 100%;
+            max-width: 480px; 
+            background: #111;
+            border: 4px solid var(--fc-white);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 場景切換控制 */
+        .scene { display: none; }
+        .scene.active { display: flex; flex-direction: column; gap: 10px; }
+
+        /* 選隊畫面 */
+        .title-screen { text-align: center; padding: 15px 0; }
+        .title-screen h1 { color: var(--fc-gold); font-size: 1.5rem; margin: 0 0 5px 0; text-shadow: 3px 3px #500; }
+        .team-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid var(--fc-white);
+            padding: 8px;
+            background: #222;
+        }
+        .team-btn {
+            background: #333;
+            color: #fff;
+            border: 2px solid #555;
+            padding: 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .team-btn.selected {
+            background: var(--fc-red);
+            border-color: var(--fc-gold);
+            color: var(--fc-white);
+            box-shadow: 0 0 8px var(--fc-gold);
+        }
+
+        /* 季後賽對陣宣告 */
+        .stage-banner {
+            background: #002288;
+            color: #fff;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: 2px solid #fff;
+        }
+        .vs-announcement {
+            text-align: center;
+            background: #222;
+            padding: 20px;
+            border: 2px dashed #fff;
+            font-size: 1.2rem;
+        }
+
+        /* 計分板 */
+        .scoreboard { background-color: var(--fc-black); border: 2px solid var(--fc-white); padding: 5px; font-size: 0.75rem; }
+        .sb-table { width: 100%; border-collapse: collapse; text-align: center; }
+        .sb-table th, .sb-table td { padding: 4px 2px; border: 1px solid #333; }
+        .sb-th-gold { color: var(--fc-gold); font-weight: bold; }
+        .sb-name { text-align: left; padding-left: 4px; font-weight: bold; max-width: 75px; overflow: hidden; }
+        .sb-name.red { color: #ffcc00; } /* 象隊黃色或主隊亮色 */
+        .sb-name.green { color: #00ff66; }
+        .sb-total { color: var(--fc-gold); font-size: 0.85rem; font-weight: bold; }
+
+        /* 殘壘與燈號 */
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--fc-screen-bg); padding: 8px; border: 2px solid var(--fc-white); }
+        .bso-panel { display: flex; flex-direction: column; justify-content: center; gap: 4px; background: rgba(0,0,0,0.5); padding: 5px; }
+        .bso-row { display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 0.9rem;}
+        .bso-dots { display: flex; gap: 4px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #333; border: 1px solid #fff;}
+        .dot.b.active { background: #00ff00; }
+        .dot.s.active { background: #00ffff; }
+        .dot.o.active { background: #ff0000; }
+        .diamond-box { display: flex; justify-content: center; align-items: center; background: var(--fc-soil); height: 75px; }
+        .diamond { width: 45px; height: 45px; border: 1px dashed var(--fc-white); transform: rotate(45deg); position: relative; }
+        .base { position: absolute; width: 10px; height: 10px; background: var(--fc-white); transform: rotate(-45deg); }
+        .base.active { background: var(--fc-gold); }
+        .base-1 { top: -5px; right: -5px; }
+        .base-2 { top: -5px; left: -5px; }
+        .base-3 { bottom: -5px; left: -5px; }
+
+        /* 數據紀錄室看板 */
+        .stats-drawer { background: #222; border: 2px solid var(--fc-white); font-size: 0.7rem; padding: 5px; max-height: 140px; overflow-y: auto; }
+        .stats-table { width: 100%; border-collapse: collapse; text-align: center; }
+        .stats-table th { background: #333; color: var(--fc-gold); position: sticky; top: 0; }
+        .stats-table td, .stats-table th { border: 1px solid #444; padding: 3px 2px; }
+        .stats-table tr.current-batter { background: rgba(251, 192, 45, 0.25); font-weight: bold; border: 1px solid var(--fc-gold); }
+
+        /* 選手對決 */
+        .versus-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .player-card { background: #222; border: 2px solid var(--fc-white); padding: 5px; text-align: center; font-size: 0.8rem; }
+        .player-card.atk { border-color: var(--fc-gold); }
+        .player-card.def { border-color: #00ff66; }
+        .sprite-window { width: 90px; height: 120px; margin: 5px auto; border: 2px solid var(--fc-white); background-size: calc(90px * 7) calc(120px * 3); background-repeat: no-repeat; image-rendering: pixelated; background-color: #111; }
+
+        .log-console { background: var(--fc-black); border: 2px solid var(--fc-white); height: 75px; overflow-y: auto; padding: 5px; font-size: 0.8rem; line-height: 1.4; color: #00ff00; }
+        .save-load-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px dashed var(--fc-white); padding: 8px; font-size: 0.75rem; }
+        .file-btn { background: #333; color: #fff; border: 1px solid #fff; padding: 4px; text-align: center; cursor: pointer; }
+        #file-input { display: none; }
+
+        /* 手機單手大鈕 */
+        .action-zone { margin-top: 5px; }
+        .btn-main { width: 100%; padding: 16px; font-size: 1.25rem; font-weight: bold; background: linear-gradient(18deg, #1155cc, #002288); color: var(--fc-white); border: 3px solid var(--fc-white); border-radius: 10px; box-shadow: 0 4px 0 #001144; cursor: pointer; text-shadow: 1px 1px #000; }
+        .btn-main:disabled { background: #444; box-shadow: none; border-color: #777; color: #888; }
+        
+        .audio-btn { background: #002288; color: var(--fc-white); border: 2px solid var(--fc-white); font-size: 0.8rem; padding: 2px 8px; cursor: pointer; font-weight: bold; }
+
+        /* 特效覆蓋層 */
+        .fx-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: none; justify-content: center; align-items: center;
+            z-index: 999; font-size: 3rem; font-weight: bold; text-shadow: 4px 4px #000;
+        }
+        @keyframes flashFx {
+            0% { background: rgba(255,255,255,0.85); color: #ffcc00; transform: scale(1); }
+            50% { background: rgba(0,34,136,0.7); color: #ffffff; transform: scale(1.15) rotate(4deg); }
+            100% { background: transparent; color: transparent; transform: scale(1); }
+        }
+        .fx-active { display: flex; animation: flashFx 0.4s ease-in-out 3; }
+        .shake { animation: shakeAni 0.1s ease-in-out 5; }
+        @keyframes shakeAni {
+            0% { transform: translate(3px, 3px); }
+            50% { transform: translate(-3px, -3px); }
+            100% { transform: translate(0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper" id="game-container">
+    <div class="fx-overlay" id="hit-fx-overlay">安打!!</div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #fff; padding-bottom:4px;">
+        <span id="global-stage" style="color:var(--fc-gold); font-weight:bold; font-size:0.9rem;">職棒六年聯盟大賽</span>
+        <button class="audio-btn" id="audio-toggle" onclick="toggleAudio()">🎵 音效: 關</button>
+    </div>
+
+    <div id="scene-select" class="scene active">
+        <div class="title-screen">
+            <h1>1995 中華職棒<br>【總冠軍金冠軍挑戰賽】</h1>
+            <p style="font-size:0.8rem; color:#aaa;">請選取您要操控的職棒六年元老戰隊（先攻）：</p>
+        </div>
+        <div class="team-grid" id="select-team-grid"></div>
+        <div class="action-zone">
+            <button class="btn-main" onclick="confirmTeam()">決定球隊 (START)</button>
+        </div>
+    </div>
+
+    <div id="scene-bracket" class="scene">
+        <div class="stage-banner" id="bracket-stage-title">首輪季後賽 (GAME 1)</div>
+        <div class="vs-announcement">
+            <div style="color:var(--fc-gold);" id="brk-player">PLAYER</div>
+            <div style="margin:10px 0; font-size:0.8rem; color:var(--fc-red);">- 傳統大對決 -</div>
+            <div style="color:#00ff66;" id="brk-cpu">CPU</div>
+        </div>
+        <p style="font-size:0.75rem; color:#aaa; text-align:center;">九局激戰！連過三關即可強勢勇奪職棒六年年度總冠軍！</p>
+        <div class="action-zone">
+            <button class="btn-main" onclick="startMatchScene()">PLAY BALL (開打)</button>
+        </div>
+    </div>
+
+    <div id="scene-match" class="scene">
+        <div class="scoreboard" id="main-scoreboard">
+            <table class="sb-table">
+                <tr class="sb-th-gold">
+                    <th style="text-align:left; width:65px;">TEAM</th>
+                    <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>X</th>
+                    <th>R</th><th>H</th>
+                </tr>
+                <tr>
+                    <td class="sb-name red" id="sb-name-red">主隊</td>
+                    <td id="r1">-</td><td id="r2">-</td><td id="r3">-</td><td id="r4">-</td><td id="r5">-</td><td id="r6">-</td><td id="r7">-</td><td id="r8">-</td><td id="r9">-</td><td id="r10">-</td>
+                    <td class="sb-total" id="total-r-red">0</td>
+                    <td class="sb-total" id="total-h-red">0</td>
+                </tr>
+                <tr>
+                    <td class="sb-name green" id="sb-name-green">客隊</td>
+                    <td id="g1">-</td><td id="g2">-</td><td id="g3">-</td><td id="g4">-</td><td id="g5">-</td><td id="g6">-</td><td id="g7">-</td><td id="g8">-</td><td id="g9">-</td><td id="g10">-</td>
+                    <td class="sb-total" id="total-r-green">0</td>
+                    <td class="sb-total" id="total-h-green">0</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="field-grid">
+            <div class="bso-panel">
+                <div class="bso-row">B <div class="bso-dots"><div class="dot b" id="b1"></div><div class="dot b" id="b2"></div><div class="dot b" id="b3"></div></div></div>
+                <div class="bso-row">S <div class="bso-dots"><div class="dot s" id="s1"></div><div class="dot s" id="s2"></div></div></div>
+                <div class="bso-row">O <div class="bso-dots"><div class="dot o" id="o1"></div><div class="dot o" id="o2"></div></div></div>
+            </div>
+            <div class="diamond-box">
+                <div class="diamond">
+                    <div class="base base-1" id="base-1"></div>
+                    <div class="base base-2" id="base-2"></div>
+                    <div class="base base-3" id="base-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-drawer">
+            <div style="color:var(--fc-gold); font-weight:bold; margin-bottom:3px; font-size:0.75rem;">📋 本土打線 1~9棒 賽事即時紀錄統計</div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>棒次</th><th>名字</th><th>打席</th><th>安打</th><th>打點</th><th>HR</th><th>打擊率</th>
+                    </tr>
+                </thead>
+                <tbody id="stats-tbody">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="versus-zone">
+            <div class="player-card atk">
+                <div id="card-atk-title" style="color:var(--fc-gold); font-weight:bold; font-size:0.75rem;">打擊方</div>
+                <div class="sprite-window" id="sprite-bat"></div>
+                <div id="card-bat-name" style="font-weight:bold;">-</div>
+                <div id="card-bat-order" style="color:#aaa; font-size:0.75rem;">1棒</div>
+            </div>
+            <div class="player-card def">
+                <div id="card-def-title" style="color:#00ff66; font-weight:bold; font-size:0.75rem;">防守方</div>
+                <div class="sprite-window" id="sprite-pit"></div>
+                <div id="card-pit-name" style="font-weight:bold;">-</div>
+                <div style="color:#aaa; font-size:0.75rem;">王牌投手</div>
+            </div>
+        </div>
+
+        <div class="log-console" id="log-box">[廣播] 歡迎來到1995年中華職棒棒球場！</div>
+
+        <div class="save-load-zone">
+            <div class="file-btn" onclick="exportJSON()">💾 備份進度</div>
+            <label class="file-btn" for="file-input">📂 還原進度</label>
+            <input type="file" id="file-input" accept=".json" onchange="importJSON(event)">
+        </div>
+
+        <div class="action-zone">
+            <button class="btn-main" id="main-action-btn" onclick="playBall()">⚡ 揮棒揮擊・強攻對決 ⚡</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 依據指定，預設讀取同目錄下的本地圖檔
+    const RED_TEAM_IMG = "red_team_sprites.png";
+    const GREEN_TEAM_IMG = "green_team_sprites.png";
+
+    // 1995年 中華職棒六年 經典六隊名單
+    const cpblTeams = ["兄弟象", "統一獅", "味全龍", "三商虎", "時報鷹", "俊國熊"];
+    
+    // 經典名將群姓名庫（模擬1~9棒與對手）
+    const classicPlayers = ["林易增", "洪一中", "路易士", "王光輝", "葛雷諾", "李居明", "陳義信", "黃平洋", "廖敏雄", "曾貴章", "哥雅", "康雷", "鷹俠", "王漢", "白昆弘", "林朝煌"];
+
+    // 數據紀錄室初始化
+    let playerStats = Array.from({length: 9}, (_, i) => ({
+        order: i + 1,
+        name: classicPlayers[i % classicPlayers.length],
+        pa: 0,   
+        h: 0,    
+        rbi: 0,  
+        hr: 0    
+    }));
+
+    let tournament = {
+        playerSchool: "",
+        currentStage: 0, 
+        stagesText: ["首輪季後挑戰賽", "聯盟季後爭霸賽", "職棒六年總冠軍金冠軍戰"],
+        pool: [] 
+    };
+
+    let game = {
+        scoreRed: 0, scoreGreen: 0, hitsRed: 0, hitsGreen: 0,
+        inning: 1, isTop: true, balls: 0, strikes: 0, outs: 0,
+        bases: [false, false, false], batIndex: 0, pitIndex: 4,
+        redSchool: "", greenSchool: "",
+        redInnings: Array(10).fill('-'), greenInnings: Array(10).fill('-'),
+        currentInningRun: 0, isOver: false
+    };
+
+    let audioCtx = null, bgmInterval = null, isAudioOn = false, bgmStep = 0;
+    const redMelody = [349, 392, 440, 440, 493, 523, 523, 440]; // 懷舊風旋律
+    const greenMelody = [261, 293, 329, 349, 392, 349, 329, 261];
+
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    function playTone(freq, type, duration, volume = 0.08) {
+        if (!isAudioOn || !audioCtx) return;
+        try {
+            let osc = audioCtx.createOscillator(); let gainNode = audioCtx.createGain();
+            osc.type = type; osc.frequency.value = freq;
+            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
+    }
+
+    // 震動與紅白閃爍打擊特效
+    function triggerVisualFx(text) {
+        const overlay = document.getElementById('hit-fx-overlay');
+        const container = document.getElementById('game-container');
+        overlay.innerText = text;
+        overlay.classList.remove('fx-active');
+        container.classList.remove('shake');
+        
+        void overlay.offsetWidth; // 驅動重繪
+        overlay.classList.add('fx-active');
+        container.classList.add('shake');
+        
+        setTimeout(() => {
+            overlay.classList.remove('fx-active');
+            container.classList.remove('shake');
+        }, 1200);
+    }
+
+    function startDynamicBGM() {
+        if (bgmInterval) clearInterval(bgmInterval);
+        bgmStep = 0;
+        bgmInterval = setInterval(() => {
+            if (isAudioOn && !game.isOver && document.getElementById('scene-match').classList.contains('active')) {
+                let freq = (game.isTop ? redMelody : greenMelody)[bgmStep % 8];
+                playTone(freq, game.isTop ? 'square' : 'triangle', 0.18, 0.02);
+                bgmStep++;
+            }
+        }, 250);
+    }
+
+    function toggleAudio() {
+        initAudio(); isAudioOn = !isAudioOn;
+        document.getElementById('audio-toggle').innerText = isAudioOn ? "🎵 音效: 開" : "🎵 音效: 關";
+        if (isAudioOn) { if (audioCtx.state === 'suspended') audioCtx.resume(); startDynamicBGM(); }
+        else { if (bgmInterval) clearInterval(bgmInterval); }
+    }
+
+    function showScene(id) {
+        document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function initSelectScreen() {
+        const grid = document.getElementById('select-team-grid');
+        grid.innerHTML = "";
+        cpblTeams.forEach(sch => {
+            let btn = document.createElement('button');
+            btn.className = "team-btn";
+            btn.innerText = sch;
+            btn.onclick = () => {
+                document.querySelectorAll('.team-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                tournament.playerSchool = sch;
+            };
+            grid.appendChild(btn);
+        });
+    }
+
+    function confirmTeam() {
+        if (!tournament.playerSchool) { alert("請先選取一支中職球隊！"); return; }
+        tournament.pool = cpblTeams.filter(s => s !== tournament.playerSchool).sort(() => Math.random() - 0.5);
+        tournament.currentStage = 0;
+        goToBracketScene();
+    }
+
+    function goToBracketScene() {
+        document.getElementById('global-stage').innerText = tournament.stagesText[tournament.currentStage];
+        document.getElementById('bracket-stage-title').innerText = `${tournament.stagesText[tournament.currentStage]} (STAGE ${tournament.currentStage + 1})`;
+        document.getElementById('brk-player').innerText = `1P: ${tournament.playerSchool}`;
+        document.getElementById('brk-cpu').innerText = `CPU: ${tournament.pool[tournament.currentStage]}`;
+        showScene('scene-bracket');
+    }
+
+    function startMatchScene() {
+        game = {
+            scoreRed: 0, scoreGreen: 0, hitsRed: 0, hitsGreen: 0,
+            inning: 1, isTop: true, balls: 0, strikes: 0, outs: 0,
+            bases: [false, false, false], batIndex: 0, pitIndex: Math.floor(Math.random()*16),
+            redSchool: tournament.playerSchool, greenSchool: tournament.pool[tournament.currentStage],
+            redInnings: Array(10).fill('-'), greenInnings: Array(10).fill('-'),
+            currentInningRun: 0, isOver: false
+        };
+        
+        document.getElementById('main-action-btn').innerText = "⚡ 揮棒揮擊・強攻對決 ⚡";
+        document.getElementById('main-action-btn').disabled = false;
+        document.getElementById('log-box').innerHTML = `[大會公告] ${game.redSchool} VS ${game.greenSchool} 比賽正式開打！`;
+        
+        renderStatsTable();
+        updateUI();
+        showScene('scene-match');
+        if (isAudioOn) startDynamicBGM();
+    }
+
+    function setSprite(element, imgUrl, index) {
+        const col = index % 7; const row = Math.floor(index / 7);
+        element.style.backgroundImage = `url('${imgUrl}')`;
+        element.style.backgroundPosition = `${(col / 6) * 100}% ${(row / 2) * 100}%`;
+    }
+
+    function renderStatsTable() {
+        const tbody = document.getElementById('stats-tbody');
+        tbody.innerHTML = "";
+        const currentOrder = (game.batIndex % 9) + 1;
+
+        playerStats.forEach(p => {
+            const tr = document.createElement('tr');
+            if (game.isTop && p.order === currentOrder && !game.isOver) {
+                tr.className = "current-batter";
+            }
+            const avg = p.pa === 0 ? ".000" : (p.h / p.pa).toFixed(3).substring(1);
+            tr.innerHTML = `
+                <td>${p.order}棒</td>
+                <td>${p.name}</td>
+                <td>${p.pa}</td>
+                <td>${p.h}</td>
+                <td>${p.rbi}</td>
+                <td>${p.hr}</td>
+                <td style="color:var(--fc-gold); font-weight:bold;">${avg}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateUI() {
+        document.getElementById('sb-name-red').innerText = game.redSchool;
+        document.getElementById('sb-name-green').innerText = game.greenSchool;
+        document.getElementById('total-r-red').innerText = game.scoreRed;
+        document.getElementById('total-h-red').innerText = game.hitsRed;
+        document.getElementById('total-r-green').innerText = game.scoreGreen;
+        document.getElementById('total-h-green').innerText = game.hitsGreen;
+
+        for(let i=1; i<=10; i++) {
+            document.getElementById(`r${i}`).innerText = game.redInnings[i-1];
+            document.getElementById(`g${i}`).innerText = game.greenInnings[i-1];
+        }
+
+        for(let i=1; i<=3; i++) document.getElementById(`b${i}`).className = `dot b ${game.balls >= i ? 'active' : ''}`;
+        for(let i=1; i<=2; i++) document.getElementById(`s${i}`).className = `dot s ${game.strikes >= i ? 'active' : ''}`;
+        for(let i=1; i<=2; i++) document.getElementById(`o${i}`).className = `dot o ${game.outs >= i ? 'active' : ''}`;
+
+        document.getElementById('base-1').className = `base base-1 ${game.bases[0] ? 'active' : ''}`;
+        document.getElementById('base-2').className = `base base-2 ${game.bases[1] ? 'active' : ''}`;
+        document.getElementById('base-3').className = `base base-3 ${game.bases[2] ? 'active' : ''}`;
+
+        const bSprite = document.getElementById('sprite-bat');
+        const pSprite = document.getElementById('sprite-pit');
+        
+        const currentOrderIndex = game.batIndex % 9;
+        if (game.isTop) {
+            setSprite(bSprite, RED_TEAM_IMG, game.batIndex % 21);
+            setSprite(pSprite, GREEN_TEAM_IMG, game.pitIndex % 21);
+            document.getElementById('card-atk-title').innerText = `${game.redSchool} (攻)`;
+            document.getElementById('card-def-title').innerText = `${game.greenSchool} (守)`;
+            document.getElementById('card-bat-name').innerText = playerStats[currentOrderIndex].name;
+            document.getElementById('card-bat-order').innerText = `${playerStats[currentOrderIndex].order}棒`;
+        } else {
+            setSprite(bSprite, GREEN_TEAM_IMG, game.batIndex % 21);
+            setSprite(pSprite, RED_TEAM_IMG, game.pitIndex % 21);
+            document.getElementById('card-atk-title').innerText = `${game.greenSchool} (攻)`;
+            document.getElementById('card-def-title').innerText = `${game.redSchool} (守)`;
+            document.getElementById('card-bat-name').innerText = classicPlayers[(game.batIndex + 3) % classicPlayers.length];
+            document.getElementById('card-bat-order').innerText = `${(game.batIndex % 9) + 1}棒`;
+        }
+        document.getElementById('card-pit-name').innerText = classicPlayers[(game.pitIndex + 5) % classicPlayers.length];
+        renderStatsTable();
+    }
+
+    function log(msg) {
+        const box = document.getElementById('log-box');
+        box.innerHTML += `<div>${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function advanceBases(num) {
+        let runs = 0;
+        const currentOrderIndex = game.batIndex % 9;
+
+        for (let i = 0; i < num; i++) {
+            if (game.bases[2]) { runs++; game.bases[2] = false; }
+            if (game.bases[1]) { game.bases[2] = true; game.bases[1] = false; }
+            if (game.bases[0]) { game.bases[1] = true; game.bases[0] = false; }
+            if (i === 0) game.bases[0] = true;
+            else if (i === 1) { game.bases[1] = true; game.bases[0] = false; }
+            else if (i === 2) { game.bases[2] = true; game.bases[1] = false; game.bases[0] = false; }
+        }
+        if (runs > 0) {
+            if(isAudioOn) { playTone(587, 'square', 0.05); setTimeout(()=>playTone(698, 'square', 0.06), 50); }
+            game.currentInningRun += runs;
+            if (game.isTop) {
+                game.scoreRed += runs;
+                playerStats[currentOrderIndex].rbi += runs; // 增加得分打點
+            } else {
+                game.scoreGreen += runs;
+            }
+            log(`[得分] 📣 歡呼聲起！跑回 ${runs} 分！`);
+        }
+        if (!game.isTop && game.inning >= 9 && game.scoreGreen > game.scoreRed) {
+            log(`[再見比賽] 💥 ${game.greenSchool} 擊出再見安打，逆轉全場！`);
+            endMatch();
+        }
+    }
+
+    function switchInning() {
+        if (game.isTop) {
+            game.redInnings[game.inning - 1] = game.currentInningRun;
+            game.isTop = false;
+        } else {
+            game.greenInnings[game.inning - 1] = game.currentInningRun;
+            if (game.inning === 9) {
+                if (game.scoreRed !== game.scoreGreen) { endMatch(); return; }
+                else { log(`[延長賽] 戰況膠著！殺入第 10 局延長賽！`); game.inning = 10; game.isTop = true; }
+            } else if (game.inning === 10) { endMatch(); return; }
+            else { game.inning++; game.isTop = true; }
+        }
+        game.balls = 0; game.strikes = 0; game.outs = 0;
+        game.bases = [false, false, false]; game.currentInningRun = 0;
+        game.pitIndex = Math.floor(Math.random() * 16);
+        if (isAudioOn) startDynamicBGM(); 
+    }
+
+    function playBall() {
+        if (game.isOver) return;
+        initAudio(); if(audioCtx && audioCtx.state === 'suspended' && isAudioOn) audioCtx.resume();
+        if (game.isTop && game.redInnings[game.inning-1] === '-') game.redInnings[game.inning-1] = 0;
+        if (!game.isTop && game.greenInnings[game.inning-1] === '-') game.greenInnings[game.inning-1] = 0;
+
+        const currentOrderIndex = game.batIndex % 9;
+
+        if (game.isTop) {
+            playerStats[currentOrderIndex].pa++;
+        }
+
+        const p = Math.random();
+        if (p < 0.43) {
+            if (Math.random() < 0.5) {
+                game.strikes++; log(`[好球] 打者揮棒落空！`);
+                if (game.strikes >= 3) { game.outs++; game.strikes = 0; game.balls = 0; if(isAudioOn) playTone(150, 'square', 0.25); log(`[出局] ❌ 遭到大角度振奮三振！`); }
+            } else {
+                game.balls++; log(`[壞球] 投手投出偏高偏遠壞球。`);
+                if (game.balls >= 4) { log(`[保送] 🎒 獲得四壞球保送上壘。`); game.strikes = 0; game.balls = 0; advanceBases(1); }
+            }
+        } else {
+            game.strikes = 0; game.balls = 0;
+            const hitP = Math.random();
+            if (hitP < 0.49) { game.outs++; if(isAudioOn) playTone(150, 'square', 0.2); log(`[出局] 內野強勁滾地球被刺殺。`); }
+            else {
+                if(isAudioOn) { playTone(200, 'triangle', 0.08); playTone(850, 'square', 0.15); }
+                
+                if (game.isTop) {
+                    game.hitsRed++;
+                    playerStats[currentOrderIndex].h++;
+                } else {
+                    game.hitsGreen++;
+                }
+
+                if (hitP < 0.82) { 
+                    log(`[安打] 🔥 穿越內野一壘安打！`); 
+                    triggerVisualFx("安打!");
+                    advanceBases(1); 
+                }
+                else if (hitP < 0.94) { 
+                    log(`[長打] 🚀 外野深遠二壘安打！`); 
+                    triggerVisualFx("二壘安打!");
+                    advanceBases(2); 
+                }
+                else { 
+                    log(`[全壘打] ☄️ 💥 這是支全・壘・打 ！！`); 
+                    triggerVisualFx("全壘打!!");
+                    if (game.isTop) playerStats[currentOrderIndex].hr++; 
+                    advanceBases(4); 
+                }
+            }
+        }
+        if(!game.isOver) game.batIndex = (game.batIndex + 1);
+        if (game.outs >= 3) { log(`[交換] 3出局！攻守交換。`); switchInning(); }
+        if(!game.isOver) updateUI();
+    }
+
+    function endMatch() {
+        game.isOver = true;
+        if(game.isTop) game.redInnings[game.inning - 1] = game.currentInningRun;
+        else game.greenInnings[game.inning - 1] = game.currentInningRun;
+        updateUI();
+        clearInterval(bgmInterval);
+
+        const playerWon = game.scoreRed > game.scoreGreen;
+        const isDraw = game.scoreRed === game.scoreGreen;
+
+        if (playerWon) {
+            log(`[季後賽公告] 🏆 恭喜！${tournament.playerSchool} 贏下這場激戰！`);
+            if (tournament.currentStage < 2) {
+                document.getElementById('main-action-btn').innerText = "👉 進入下一輪季後爭霸系列賽";
+                document.getElementById('main-action-btn').onclick = () => {
+                    tournament.currentStage++;
+                    goToBracketScene();
+                    document.getElementById('main-action-btn').onclick = playBall;
+                };
+            } else {
+                log(`[🏆金冠軍誕生] 黃絲帶、彩帶漫天飛舞！${tournament.playerSchool} 成功榮登職棒六年大聯盟總冠軍！`);
+                document.getElementById('main-action-btn').innerText = "🏆 榮登職棒六年年度總冠軍！";
+                document.getElementById('main-action-btn').disabled = true;
+            }
+        } else {
+            if(isDraw) log(`[大會公告] 延長賽和局！依聯賽規章判定由 CPU 晉級下一輪！`);
+            else log(`[大會公告] ❌ 挑戰失敗！${tournament.playerSchool} 慘遭淘汰！明年請再接再厲`);
+            
+            document.getElementById('main-action-btn').innerText = "💥 挑戰失敗 (點擊重來)";
+            document.getElementById('main-action-btn').onclick = () => { location.reload(); };
+        }
+    }
+
+    function exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ tournament, game, playerStats }, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `cpbl_1995_stage_${tournament.currentStage}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click(); downloadAnchor.remove();
+    }
+
+    function importJSON(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (imported.tournament && imported.game) {
+                    tournament = imported.tournament;
+                    game = imported.game;
+                    if (imported.playerStats) playerStats = imported.playerStats;
+                    document.getElementById('main-action-btn').onclick = playBall;
+                    document.getElementById('main-action-btn').disabled = game.isOver;
+                    showScene('scene-match');
+                    updateUI();
+                    if(isAudioOn) startDynamicBGM();
+                    log(`[系統] 📂 已載入職棒六年第 ${tournament.currentStage+1} 階段球隊及選手統計進度！`);
+                }
+            } catch (err) { alert("檔案讀取失敗！"); }
+        };
+        reader.readAsText(file);
+    }
+
+    window.onload = function() { initSelectScreen(); };
+</script>
+</body>
+</html>
